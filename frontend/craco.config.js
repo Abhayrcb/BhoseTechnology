@@ -223,7 +223,22 @@ if (emergentOverlay) {
 }
 
 const configureDevServer = webpackConfig.devServer;
-webpackConfig.devServer = (devServerConfig) =>
-  makeDevServerV5Compatible(configureDevServer(devServerConfig));
+webpackConfig.devServer = (devServerConfig) => {
+  const compatible = makeDevServerV5Compatible(configureDevServer(devServerConfig));
+  const previous = compatible.setupMiddlewares;
+  compatible.setupMiddlewares = (middlewares, devServer) => {
+    if (previous) middlewares = previous(middlewares, devServer);
+    const { createSeoMiddleware } = require("./seo-middleware.cjs");
+    const template = () => new Promise((resolve, reject) => {
+      devServer.middleware.waitUntilValid(() => {
+        const output = devServer.compiler.options.output.path;
+        devServer.middleware.context.outputFileSystem.readFile(path.join(output, "index.html"), "utf8", (error, html) => error ? reject(error) : resolve(html));
+      });
+    });
+    middlewares.unshift({ name: "store-seo-html", middleware: createSeoMiddleware(template) });
+    return middlewares;
+  };
+  return compatible;
+};
 
 module.exports = webpackConfig;

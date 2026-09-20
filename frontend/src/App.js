@@ -4,6 +4,8 @@ import axios from "axios";
 import { LogIn } from "lucide-react";
 import { StoreProvider } from "./components/StoreContext";
 import { Brand } from "./components/Brand";
+import { SeoManager } from "./components/SeoManager";
+import { Shell } from "./components/Shell";
 import { AdminPanel } from "./components/admin/AdminPanel";
 import Storefront, { ProductDetail } from "./pages/Storefront";
 import { Cart, Checkout } from "./pages/CartCheckout";
@@ -18,12 +20,13 @@ function App() {
   const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem("cart") || "[]"); } catch { return []; } });
   useEffect(() => localStorage.setItem("cart", JSON.stringify(cart)), [cart]);
   const add = p => setCart(items => [...items.filter(x => x.product_id !== p.product_id), p]);
-  return <StoreProvider><BrowserRouter><Routes>
+  return <StoreProvider><BrowserRouter><SeoManager/><Routes>
     <Route path="/" element={<Storefront cartCount={cart.length}/>}/>
     <Route path="/product/:id" element={<ProductDetail addToCart={add} cartCount={cart.length}/>}/>
     <Route path="/cart" element={<Cart cart={cart} setCart={setCart}/>}/>
     <Route path="/checkout" element={<Checkout cart={cart} setCart={setCart}/>}/>
     <Route path="/admin" element={<Admin/>}/>
+    <Route path="*" element={<Shell><main className="empty"><h1 data-testid="not-found-title">Page not found</h1><Link className="button button-dark" to="/" data-testid="not-found-home-link">Back to shop</Link></main></Shell>}/>
   </Routes></BrowserRouter></StoreProvider>;
 }
 export default App;

@@ -4,6 +4,7 @@ import { ArrowRight, Check, ChevronLeft, Package, Search, ShieldCheck, ShoppingB
 import { api, money } from "../lib/api";
 import { Shell } from "../components/Shell";
 import { useStore } from "../components/StoreContext";
+import { LocalStoreInfo } from "../components/LocalStoreInfo";
 
 export default function Storefront({ cartCount }) {
   const [products, setProducts] = useState([]);
@@ -20,6 +21,7 @@ export default function Storefront({ cartCount }) {
   }, [query, brand, category]);
   const brands = [...new Set([brand, ...products.map(p => p.brand)])].filter(Boolean);
   return <Shell cartCount={cartCount}><main><section className="hero"><div className="hero-copy"><p className="eyebrow">REFURBISHED • READY FOR MORE</p><h1 data-testid="home-hero-title">{settings?.hero_title || "Good tech. Better value."}</h1><p className="hero-subtitle" data-testid="home-hero-subtitle">{settings?.hero_subtitle}</p><a href="#collection" className="button button-dark" data-testid="hero-shop-button">Explore the collection <ArrowRight size={17}/></a></div><div className="hero-art"><img src="https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&w=1400&q=85" alt="Silver laptop on a bright desk"/><div className="hero-stamp"><ShieldCheck size={17}/><span>30+ point<br/><b>quality check</b></span></div></div></section>
+    <LocalStoreInfo/>
     <section className="trust-strip" id="why"><div><ShieldCheck/><span><b>Tested inside out</b><small>Every unit gets a real check</small></span></div><div><Package/><span><b>Honest condition</b><small>Clear grades. No surprises.</small></span></div><div><Check/><span><b>Store warranty</b><small>Support beyond checkout</small></span></div></section>
     <section className="collection" id="collection"><div className="section-heading"><div><p className="eyebrow">THE COLLECTION</p><h2>Find your next machine.</h2></div><p className="muted">Inspected laptops.<br/>Priced fairly.</p></div><div className="toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by model or brand" data-testid="product-search-input"/></div><select value={brand} onChange={e => setBrand(e.target.value)} data-testid="brand-filter"><option value="">All brands</option>{brands.map(b => <option key={b}>{b}</option>)}</select><select value={category} onChange={e => setCategory(e.target.value)} data-testid="category-filter"><option value="">All uses</option><option>Business</option><option>Student</option><option>Gaming</option></select><span className="result-count" data-testid="product-result-count">{products.length} available</span></div>
     {error && <p className="error-message" data-testid="collection-error" role="alert">{error}</p>}{loading ? <p className="loading" data-testid="collection-loading">Loading laptops…</p> : <><div className="product-grid">{products.map(p => <ProductCard key={p.product_id} product={p}/>)}</div>{!products.length && !error && <div className="empty" data-testid="collection-empty">No laptops match that search.</div>}</>}</section></main></Shell>;
@@ -32,7 +34,7 @@ export const ProductDetail = ({ addToCart, cartCount }) => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const { id } = useParams();
-  useEffect(() => { api.get(`/products/${id}`).then(r => setProduct(r.data)).catch(() => setError("This laptop is unavailable right now.")); }, [id]);
+  useEffect(() => { let active = true; setProduct(null); setError(""); setMessage(""); api.get(`/products/${id}`).then(r => { if (active) setProduct(r.data); }).catch(() => { if (active) setError("This laptop is unavailable right now."); }); return () => { active = false; }; }, [id]);
   if (error) return <Shell cartCount={cartCount}><main className="loading error-state"><p className="error-message" data-testid="product-detail-error">{error}</p><Link to="/" className="button button-dark" data-testid="product-detail-error-back">Back to collection</Link></main></Shell>;
   if (!product) return <Shell><div className="loading" data-testid="product-detail-loading">Loading laptop…</div></Shell>;
   const p = product;

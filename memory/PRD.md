@@ -6,6 +6,9 @@ Build a website according to the provided second-hand laptop ecommerce document,
 ## Latest approved request (2026-09-20)
 User could add products but not edit/delete them, needed stock management, reported no owner order emails, requested today's orders as Excel/PDF downloads, editable website name, a future custom domain, and full technology documentation. User approved these ahead of the previously pending Claude AI integration. Preferred communication: Hinglish.
 
+### SEO request and confirmed choices (2026-09-20)
+User asked to optimize SEO so searching Google for **Bhose Technology** brings the website near the top. Explained ranking cannot be guaranteed. User explicitly chose **Kolkata, West Bengal** as target area and **domain later; prepare SEO now, enable Google indexing only on final domain**.
+
 ## Personas
 - Shopper looking for a trustworthy refurbished laptop.
 - Store owner managing inventory, fulfilment, website branding and order notifications.
@@ -64,12 +67,30 @@ User could add products but not edit/delete them, needed stock management, repor
 - Public: `pages/Storefront.jsx`, `pages/CartCheckout.jsx`; styles `App.css`, `admin.css`.
 - Tests: `backend/tests/test_store_api.py`, external preview URL from current frontend env; credentials file is current.
 
+## SEO implemented and verified (2026-09-20)
+- Home title/description focused on Bhose Technology and Kolkata; unique product metadata, Open Graph/Twitter cards and Product JSON-LD with actual price, SKU, stock, INR and used condition.
+- Truthful Organization service area; ComputerStore/PostalAddress only if an actual street address is configured. No fake reviews, ratings, opening hours, map coordinates or business profile claims.
+- Initial HTML head and readable home/product content served identically to all visitors before React loads. This is an HTML-shell renderer, not a full React SSR/hydration rewrite. Client navigation refreshes metadata without duplicate tags or StoreContext title overrides.
+- `/robots.txt` plain text and `/sitemap.xml` XML root routes supported. Preview sitemap intentionally empty, no placeholder/preview canonicals. Future domain enables canonical URLs, WebSite/Breadcrumb schema and sitemap of active nondeleted products (including out-of-stock pages).
+- Preview noindex in initial meta and HTTP header; root robots permits fetching noindex instead of hiding it behind Disallow. Admin/cart/checkout/missing pages remain noindex. Direct missing/inactive/deleted product/page returns 404, metadata outage safely returns 503 + noindex.
+- Server-only `PUBLIC_SITE_URL` is empty and `SEO_INDEXING_ENABLED=false`. Both environment settings plus matching request hostname are required for indexing; do not enable for preview. Invalid preview/local URL configuration rejected early.
+- Admin Settings → Search appearance: target city/region, optional title/description overrides, current indexing/domain status. Visible local store content in storefront, real saved address/phone displayed when provided.
+- Tech-stack document section 11 explains SEO configuration/runtime and final-domain/Search Console/local-business checklist.
+- New files: `backend/seo_content.py`, `backend/seo_routes.py`, `frontend/seo-middleware.cjs`, `frontend/server.cjs`, `components/SeoManager.jsx`, `LocalStoreInfo.jsx`, `admin/SeoSettings.jsx`.
+- Shared Node renderer attached to existing CRACO server. `frontend/server.cjs` also provides the renderer for compiled bundles using existing PORT/API URL environment variables; current supervisor startup/ports unchanged. A plain static server loses dynamic metadata/404/discovery behavior and preserves fallback noindex—use the renderer.
+- Added explicit Express dependency using yarn. Backend/frontend restarted only for dependency/environment changes.
+- `/app/test_reports/iteration_4.json`: all 12 dedicated SEO tests passed, 12 existing ecommerce regression tests passed, browser metadata navigation/settings/responsive checks passed. Python compilation and production build passed. Production-template stripping/root replacement and 503 fallback tested by agent without changing running ports.
+- Testing agent wrote only dedicated test/report files, reviewed by main agent. Test-only fake database/environment values confined to unit tests; NO mocked application APIs.
+- Cleaned 2 new regression test orders and 8 new deleted test products; original 6 products and 3 orders preserved. Original branding restored, owner_email null, Kolkata/West Bengal saved, SEO overrides blank; preview indexing remains disabled.
+- No Google Search Console submission, ownership verification, actual indexing, rank gain or Google Business Profile creation has occurred. Those require the final domain/owner action.
+
 ## Prioritized backlog / next actions
 ### P0 — Owner verification
 - User must save the real owner email in Admin → Settings, send a test and confirm inbox receipt. Retry older owner notifications as needed. Do not assume admin login email is owner inbox. Never leave delivered@resend.dev configured.
 ### P1 — Requested but deferred
 - Claude AI product descriptions (prior request, postponed behind current fixes); obtain current integration playbook when resuming.
 - Custom domain when user is ready. No domain purchased/connected; technical checklist documented, no guessed DNS records.
+- SEO launch: configure final HTTPS origin, enable indexing only on that hostname, verify initial HTML/headers/canonicals/sitemap, then verify ownership and submit sitemap in Google Search Console. Eligible in-person business can verify Google Business Profile with real address/phone.
 ### P2 — Future enhancements
 - Low-stock alerts (suggestion, not implemented).
 - Image upload storage, customer order lookup, shipping/return policy pages.
@@ -81,3 +102,5 @@ User could add products but not edit/delete them, needed stock management, repor
 - Customer bag is one unit per distinct laptop; backend/admin support larger quantities.
 - Cancelling changes order status only; restock manually after verifying return/cancellation.
 - Sender From address is provider-managed and does not automatically change with a future website domain.
+- Google decides ranking, crawl/indexing timing, snippets and rich-result eligibility. SEO does not guarantee first position. Preview is intentionally not indexable.
+- Sitemap supports 49,999 product URLs plus home; add sitemap-index pagination if inventory exceeds this.

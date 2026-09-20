@@ -3,6 +3,7 @@ import { Check, Download, Mail } from "lucide-react";
 import { api, errorMessage } from "../../lib/api";
 import { downloadBlob } from "./OrdersAdmin";
 import { useStore } from "../StoreContext";
+import { SeoSettings } from "./SeoSettings";
 
 export const SettingsAdmin = () => {
   const { settings, setSettings } = useStore();
@@ -26,11 +27,11 @@ export const SettingsAdmin = () => {
     try { const { data } = await api.get("/admin/documentation", { responseType: "blob" }); downloadBlob(data, "Website-Tech-Stack.md"); }
     catch (err) { setError("Documentation could not be downloaded."); } finally { setBusy(""); }
   };
-  return <div className="settings-workspace"><form className="settings-form" onSubmit={save} onInvalid={event => setError(event.target.type === "email" ? "Please enter a valid store owner email address." : "Please enter your store name.")}>
+  return <div className="settings-workspace"><form className="settings-form" onSubmit={save} onInvalid={event => setError(event.target.type === "email" ? "Please enter a valid store owner email address." : "Please complete all required store and location fields.")}>
     <h2>Store identity & contact</h2><div className="form-grid">
       {[["store_name", "Store name", "text", "store-name"], ["owner_email", "Store owner email", "email", "owner-email"], ["phone", "Phone", "tel", "phone"], ["address", "Address", "text", "address"], ["hero_title", "Hero title", "text", "hero-title"]].map(([key, label, type, id]) => <label key={key}>{label}<input type={type} value={draft[key] || ""} required={key === "store_name"} maxLength={key === "store_name" ? 80 : undefined} onChange={e => update(key, e.target.value)} data-testid={`settings-${id}-input`}/></label>)}
       {[["hero_subtitle", "Hero subtitle", "hero-subtitle"], ["shipping_policy", "Shipping policy", "shipping"], ["return_policy", "Return policy", "return"]].map(([key, label, id]) => <label className="wide" key={key}>{label}<textarea value={draft[key] || ""} onChange={e => update(key, e.target.value)} data-testid={`settings-${id}-input`}/></label>)}
-    </div><button className="button button-accent" disabled={!!busy} data-testid="settings-save-button"><Check size={16}/>{busy === "save" ? "Saving…" : "Save settings"}</button>
+    </div><SeoSettings draft={draft} update={update}/><button className="button button-accent" disabled={!!busy} data-testid="settings-save-button"><Check size={16}/>{busy === "save" ? "Saving…" : "Save settings"}</button>
     </form>
     <section className="settings-section"><h2>Order notifications</h2><p className="muted" data-testid="settings-email-recipient">Saved owner email: {settings?.owner_email || "Not configured"}</p><button className="button button-light" disabled={!!busy || !settings?.owner_email} onClick={testEmail} data-testid="settings-test-email-button"><Mail size={16}/>{busy === "test" ? "Sending…" : "Send test email"}</button></section>
     <section className="settings-section"><h2>Website documentation</h2><button className="button button-light" disabled={!!busy} onClick={download} data-testid="settings-download-docs-button"><Download size={16}/>{busy === "docs" ? "Preparing…" : "Download tech-stack document"}</button></section>

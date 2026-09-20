@@ -184,3 +184,45 @@ A website name is not a domain registration or DNS connection. No domain has bee
 - Cart state is local to the browser, with one unit per distinct laptop in the customer bag. Admin/backend stock can represent multiple units.
 - Claude AI product descriptions remain a separate pending feature; no AI generation is currently wired into product editing.
 - Payment integration, reviews, coupons, customer accounts and staff roles are not part of this implementation.
+
+## 11. Kolkata SEO setup (2026-09-20)
+
+The owner confirmed **Kolkata, West Bengal** as the target market and said the final domain will be added later. SEO is prepared; this preview is deliberately **not indexable**. No Google first-position promise or submission has been made.
+
+### Implemented SEO
+- Brand + Kolkata-focused home title and description; unique product titles/descriptions.
+- Initial HTML metadata and readable home/product content served before JavaScript, identically for every visitor. This is an HTML-shell renderer, not a full React SSR/hydration migration.
+- Open Graph and Twitter sharing metadata, product images on product pages.
+- JSON-LD Organization / WebSite (when final URL exists), Product offers in INR, real stock availability and used condition. No fake ratings, reviews, business hours or street addresses.
+- Organization uses Kolkata/West Bengal service area; ComputerStore with PostalAddress is emitted only after a real street address is saved. Missing contact/address data must be provided truthfully for stronger local-business eligibility.
+- Root `/robots.txt` and `/sitemap.xml`, plus canonical URLs and breadcrumbs prepared for the real domain. The preview sitemap is intentionally empty: no preview or placeholder URLs.
+- Admin/cart/checkout/missing products are noindex. Direct missing product/page requests return HTTP 404; SEO-service outages return 503 + noindex rather than a false indexable success.
+- Settings → Search appearance: city, state, optional search-title/description overrides and indexing status.
+- Visible local business copy plus saved address/phone on the storefront.
+
+### SEO configuration
+- Backend `PUBLIC_SITE_URL`: empty until a real domain is ready; later set to the bare HTTPS origin (no path/query/port).
+- Backend `SEO_INDEXING_ENABLED`: currently `false`. Set to `true` only after the final domain is live and validated.
+- Both flags and the **actual request hostname** must match for a page to be indexable. Visiting a preview hostname remains noindex even if final-domain indexing is enabled.
+- Do not remove noindex only using JavaScript: Google may skip rendering pages that already have noindex in their initial HTML.
+- Preview robots allows fetching the noindex response; blocking crawl entirely can prevent Google from seeing noindex and can leave URL-only entries. The HTTP `X-Robots-Tag` and initial HTML robots meta both prohibit preview indexing.
+
+### SEO files and runtime
+- `backend/seo_content.py`: metadata, escaped initial HTML and structured data.
+- `backend/seo_routes.py`: `/api/seo/config`, `/api/seo/page`, `/api/seo/robots.txt`, `/api/seo/sitemap.xml`.
+- `frontend/seo-middleware.cjs`: initial HTML/discovery-file renderer using only the configured backend URL.
+- `frontend/craco.config.js`: same renderer attached to the existing frontend server.
+- `frontend/server.cjs`: renderer for an already compiled frontend bundle (`yarn build`, then `node server.cjs`, using existing `PORT` and `REACT_APP_BACKEND_URL`). It is provided but does not replace the current supervisor service automatically.
+- `frontend/src/components/SeoManager.jsx`: updates metadata during React navigation and saved-branding changes.
+- `LocalStoreInfo.jsx`, `admin/SeoSettings.jsx`: local content and admin search settings.
+- Do not serve `build/index.html` from a plain static server without this renderer: it intentionally contains a noindex fallback, and direct dynamic metadata/sitemap/HTTP-status behavior would be lost.
+
+### Steps once the final domain is ready
+1. Confirm the domain resolves correctly with HTTPS, frontend routes and `/api` routes working.
+2. Configure the final origin and enable indexing, restart backend, then inspect actual HTML and robots/sitemap on that hostname. Check that admin/checkout stay noindex and product stock data is correct.
+3. Verify ownership in Google Search Console and submit the root sitemap. Use URL Inspection for the home page and representative products; no account integration is currently installed.
+4. If the business is eligible (real in-person customer contact), create/verify its Google Business Profile with consistent real business name, address, phone and website. Online-only businesses are not eligible merely because a service area was entered.
+5. Publish accurate laptop photos/descriptions and earn genuine customer reviews and reputable local mentions. Do not create fake ratings or paid-link schemes.
+6. Track branded queries (Bhose Technology) and local queries (refurbished laptops Kolkata) in Search Console. Google controls crawl timing, indexing, snippets, rich-result eligibility and ranking; results are not guaranteed.
+
+Sitemap currently supports up to 49,999 active product URLs plus the home page. Add sitemap-index pagination if inventory grows beyond that.

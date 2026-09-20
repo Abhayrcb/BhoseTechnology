@@ -18,6 +18,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from email_service import notify_order, test_owner_email, EMAIL_FROM_NAME
 from reports import STORE_TZ, day_bounds, workbook_bytes, pdf_bytes
+from seo_routes import create_seo_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]
 app = FastAPI(title="Laptop Lab Store API")
 origins = [x.strip() for x in os.environ.get("CORS_ORIGINS", "*").split(",")]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
+app.include_router(create_seo_router(db))
 
 class LoginInput(BaseModel):
     email: EmailStr
@@ -95,6 +97,10 @@ class SettingsInput(BaseModel):
     warranty_default: str = "3 months store warranty"
     hero_title: str = "Good tech. Better value."
     hero_subtitle: str = "Professionally checked laptops, honestly described, ready for their next chapter."
+    seo_city: str = Field(default="Kolkata", min_length=1, max_length=60)
+    seo_region: str = Field(default="West Bengal", min_length=1, max_length=60)
+    seo_title: str = Field(default="", max_length=160)
+    seo_description: str = Field(default="", max_length=320)
 
     @field_validator("owner_email", mode="before")
     @classmethod
