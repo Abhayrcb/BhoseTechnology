@@ -163,9 +163,17 @@ async def notify_order(order):
 async def root(): return {"message":"Laptop Lab API"}
 
 @app.post("/api/auth/login")
-async def login(data: LoginInput):
+async def login(data: LoginInput, request: Request):
+    identifier=data.email.lower()
+    attempt=await db.login_attempts.find_one({"identifier":identifier},{"_id":0})
+    if attempt and attempt.get("locked_until","") > now():
+        raise HTTPException(429,"Too many attempts. Try again in a few minutes.")
     if data.email.lower() != ADMIN_EMAIL or not hmac.compare_digest(data.password, ADMIN_PASSWORD):
+        failed=(attempt or {}).get("failed",0)+1
+        update={"identifier":identifier,"failed":failed,"locked_until":(datetime.now(timezone.utc)+timedelta(minutes=15)).isoformat() if failed >= 5 else ""}
+        await db.login_attempts.replace_one({"identifier":identifier},update,upsert=True)
         raise HTTPException(401, "Invalid admin email or password")
+    await db.login_attempts.delete_one({"identifier":identifier})
     return {"token": token_for(ADMIN_EMAIL), "email": ADMIN_EMAIL, "role":"admin"}
 
 @app.get("/api/auth/me")
@@ -195,10 +203,17 @@ async def create_order(data: OrderInput, background: BackgroundTasks):
         snapshots.append({"product_id":item["product_id"],"title":item["title"],"sku":item["sku"],"price":item["price"],"quantity":line.quantity})
         total += item["price"] * line.quantity
     order={"order_id":str(uuid.uuid4()),"order_number":f"LL-{datetime.now().strftime('%y%m%d')}-{uuid.uuid4().hex[:5].upper()}","customer_name":data.customer_name,"customer_email":str(data.customer_email).lower(),"customer_phone":data.customer_phone,"address":data.address,"city":data.city,"pincode":data.pincode,"items":snapshots,"total":total,"status":"PLACED","created_at":now()}
-    for line in data.items:
-        updated=await db.products.update_one({"product_id":line.product_id,"stock_quantity":{"$gte":line.quantity}}, {"$inc":{"stock_quantity":-line.quantity}})
-        if updated.modified_count != 1: raise HTTPException(409,"Stock changed, please try again")
-    await db.orders.insert_one(order)
+    reserved=[]
+    try:
+        for line in data.items:
+            updated=await db.products.update_one({"product_id":line.product_id,"status":"active","stock_quantity":{"$gte":line.quantity}}, {"$inc":{"stock_quantity":-line.quantity}})
+            if updated.modified_count != 1: raise HTTPException(409,"Stock changed, please try again")
+            reserved.append(line)
+        await db.orders.insert_one(order)
+    except Exception:
+        for line in reserved:
+            await db.products.update_one({"product_id":line.product_id},{"$inc":{"stock_quantity":line.quantity}})
+        raise
     background.add_task(notify_order, order)
     return {k:v for k,v in order.items() if k != "_id"}
 
@@ -244,6 +259,7 @@ async def save_settings(data: SettingsInput, user=Depends(admin_required)):
 @app.on_event("startup")
 async def seed():
     await db.products.create_index("product_id",unique=True)
+    await db.login_attempts.create_index("identifier",unique=True)
     if await db.products.count_documents({}) == 0:
         samples=[
             {"title":"ThinkPad T14 Gen 2","brand":"Lenovo","category":"Business","price":34990,"compare_at_price":49990,"condition_grade":"A","condition_description":"Clean body, crisp keyboard, tested ports and excellent battery health.","processor":"Intel Core i5-1135G7","ram_gb":16,"storage_type":"NVMe SSD","storage_gb":512,"display":"14-inch Full HD IPS","gpu":"Intel Iris Xe","battery_health":"88% tested","operating_system":"Windows 11 Pro","warranty_months":3,"stock_quantity":1,"image_url":"https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=1200&q=85","status":"active"},
