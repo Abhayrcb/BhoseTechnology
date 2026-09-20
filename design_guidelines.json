@@ -1,0 +1,43 @@
+{
+  "typography": {
+    "headline_font": "Plus Jakarta Sans, sans-serif",
+    "body_font": "Inter, sans-serif",
+    "mono_font": "JetBrains Mono, monospace"
+  },
+  "colors": {
+    "primary": "#0F172A",
+    "secondary": "#334155",
+    "accent": "#0D9488",
+    "background": "#F8FAFC",
+    "card_bg": "#FFFFFF",
+    "text_main": "#0F172A",
+    "text_muted": "#64748B",
+    "border": "#E2E8F0"
+  },
+  "visual_enhancers": {
+    "border_radius": "0.75rem",
+    "shadows": "0 4px 20px -2px rgba(15, 23, 42, 0.08)",
+    "glassmorphism": "backdrop-blur-xl bg-white/80 border border-white/20"
+  },
+  "component_path": "/app/frontend/src/components/",
+  "instructions_to_main_agent": "Build a fully functional second-hand laptop e-commerce web application in React with FastAPI backend. Ensure admin login and password are securely loaded from .env secret keys (ADMIN_EMAIL, ADMIN_PASSWORD). Implement order placement with customer email required, sending order confirmation emails to both customer and store owner via Resend managed email integration (or mocked gracefully if API key missing). Store owner email, store name, shipping policy, return policy, and FAQs must be fully editable from the admin settings tab. Admin panel must manage laptop products with sample laptops initially. Ensure all interactive and key informational elements have data-testid attributes.",
+  "universal_guidelines": [
+    "You MUST NOT apply universal transition like transition: all.",
+    "Every interactive element must have distinct hover, focus, and active states.",
+    "All interactive elements and key information must have data-testid attributes.",
+    "Use generous spacing (p-6, p-8, gap-6) to avoid cluttered layouts.",
+    "Keep header solid or crystal glass with proper blur, never fully transparent without backdrop-blur."
+  ],
+  "image_urls": [
+    {
+      "category": "hero_laptop_workspace",
+      "url": "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwzfHxtYWNib29rJTIwcHJvJTIwc2xlZWslMjB3b3Jrc3BhY2UlMjB0ZWNofGVufDB8fHx8MTc4OTg3NjAzOHww&ixlib=rb-4.1.0&q=85",
+      "description": "Sleek silver laptop on desk workspace"
+    },
+    {
+      "category": "laptop_detail_mockup",
+      "url": "https://images.pexels.com/photos/13279384/pexels-photo-13279384.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Contemporary desk setup featuring laptop and accessories"
+    }
+  ]
+}
