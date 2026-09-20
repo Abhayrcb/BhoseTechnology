@@ -1,0 +1,28 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Check, ChevronLeft, ShieldCheck, ShoppingBag, X } from "lucide-react";
+import { api, errorMessage, money } from "../lib/api";
+import { Shell } from "../components/Shell";
+
+export const Cart = ({ cart, setCart }) => {
+  const total = cart.reduce((sum, p) => sum + p.price, 0);
+  return <Shell cartCount={cart.length}><main className="cart-page"><p className="eyebrow">YOUR BAG</p><h1>Ready when you are.</h1>{!cart.length ? <div className="empty bag-empty" data-testid="cart-empty"><ShoppingBag size={32}/><p>Your bag is waiting for a good laptop.</p><Link to="/" className="button button-dark" data-testid="empty-cart-shop-button">Browse laptops</Link></div> : <div className="cart-layout"><div className="cart-items">{cart.map(p => <div className="cart-item" key={p.product_id} data-testid={`cart-item-${p.product_id}`}><img src={p.image_url} alt={p.title}/><div><p className="eyebrow">{p.brand}</p><h3>{p.title}</h3><p>{p.processor} · {p.ram_gb}GB RAM</p></div><strong data-testid={`cart-price-${p.product_id}`}>{money(p.price)}</strong><button className="icon-button" onClick={() => setCart(cart.filter(x => x.product_id !== p.product_id))} aria-label={`Remove ${p.title}`} data-testid={`remove-cart-item-${p.product_id}`}><X size={17}/></button></div>)}</div><div className="summary"><p className="eyebrow">ORDER SUMMARY</p><div><span>Subtotal</span><b data-testid="cart-subtotal">{money(total)}</b></div><div><span>Shipping</span><b>Free</b></div><hr/><div className="summary-total"><span>Total</span><b data-testid="cart-total">{money(total)}</b></div><Link to="/checkout" className="button button-accent full" data-testid="checkout-button">Continue to checkout <ArrowRight size={17}/></Link><small>Payment is arranged directly with the store after your order.</small></div></div>}</main></Shell>;
+};
+
+export const Checkout = ({ cart, setCart }) => {
+  const [form, setForm] = useState({ customer_name: "", customer_email: "", customer_phone: "", address: "", city: "", pincode: "" });
+  const [error, setError] = useState("");
+  const [placed, setPlaced] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const total = cart.reduce((sum, p) => sum + p.price, 0);
+  const update = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const submit = async e => {
+    e.preventDefault(); if (busy) return; setError(""); setBusy(true);
+    try { const { data } = await api.post("/orders", { ...form, items: cart.map(p => ({ product_id: p.product_id, quantity: 1 })) }); setPlaced(data); setCart([]); }
+    catch (err) { setError(errorMessage(err, "Could not place the order. Please try again.")); } finally { setBusy(false); }
+  };
+  if (placed) return <Shell><main className="success-page"><div className="success-icon"><Check size={30}/></div><p className="eyebrow">ORDER PLACED</p><h1>It’s on its way to being yours.</h1><p className="success-lead" data-testid="order-confirmation-message">Your order is confirmed. A confirmation email is being requested for <b>{placed.customer_email}</b>. Our store team will call you to confirm delivery.</p><div className="order-ticket"><span>Order number</span><b data-testid="order-number">{placed.order_number}</b><span>Total</span><b data-testid="order-confirmation-total">{money(placed.total)}</b></div><Link to="/" className="button button-dark" data-testid="order-success-shop-button">Keep browsing <ArrowRight size={17}/></Link></main></Shell>;
+  return <Shell cartCount={cart.length}><main className="checkout-page"><Link to="/cart" className="back-link" data-testid="checkout-back-link"><ChevronLeft size={16}/> Back to bag</Link><div className="checkout-layout"><form className="checkout-form" onSubmit={submit}><p className="eyebrow">CHECKOUT</p><h1>Where should we send it?</h1><p className="muted">No payment needed here. The store team will confirm your order with you.</p><div className="form-grid">
+    {[["customer_name", "Full name", "text", "name", 2], ["customer_email", "Email address", "email", "email", 3], ["customer_phone", "Phone number", "tel", "phone", 7], ["pincode", "PIN code", "text", "pincode", 4]].map(([key, label, type, id, min]) => <label key={key}>{label}<input type={type} name={key} value={form[key]} onChange={update} required minLength={min} data-testid={`checkout-${id}-input`}/></label>)}
+    <label className="wide">Delivery address<textarea name="address" value={form.address} onChange={update} required minLength={8} data-testid="checkout-address-input"/></label><label>City<input name="city" value={form.city} onChange={update} required minLength={2} data-testid="checkout-city-input"/></label></div>{error && <p className="error-message" data-testid="checkout-error-message" role="alert">{error}</p>}<button className="button button-accent" type="submit" disabled={!cart.length || busy} data-testid="place-order-button">{busy ? "Placing order…" : "Place order"}<ArrowRight size={17}/></button></form><div className="summary checkout-summary"><p className="eyebrow">YOUR LAPTOP{cart.length > 1 ? "S" : ""}</p>{cart.map(p => <div className="mini-line" key={p.product_id} data-testid={`checkout-item-${p.product_id}`}><span>{p.title}</span><b>{money(p.price)}</b></div>)}<hr/><div className="summary-total"><span>Total</span><b data-testid="checkout-total">{money(total)}</b></div><p className="policy-note"><ShieldCheck size={15}/> No online payment is collected.</p></div></div></main></Shell>;
+};
