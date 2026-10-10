@@ -18,7 +18,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from email_service import notify_order, test_owner_email, EMAIL_FROM_NAME
 from reports import STORE_TZ, day_bounds, workbook_bytes, pdf_bytes
-from seo_routes import create_seo_router
+from seo_routes import create_seo_router 
+from promo_routes import create_promo_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -150,7 +151,7 @@ async def admin_required(request: Request):
         return payload
     except jwt.PyJWTError:
         raise HTTPException(401, "Session expired")
-
+app.include_router(create_promo_router(db, admin_required))
 @app.get("/api/")
 async def root(): return {"message":"Laptop Lab API"}
 
@@ -301,6 +302,7 @@ async def save_settings(data: SettingsInput, user=Depends(admin_required)):
 async def seed():
     await db.products.create_index("product_id",unique=True)
     await db.login_attempts.create_index("identifier",unique=True)
+    await db.promo_videos.create_index("video_id",unique=True)
     if await db.products.count_documents({}) == 0:
         samples=[
             {"title":"ThinkPad T14 Gen 2","brand":"Lenovo","category":"Business","price":34990,"compare_at_price":49990,"condition_grade":"A","condition_description":"Clean body, crisp keyboard, tested ports and excellent battery health.","processor":"Intel Core i5-1135G7","ram_gb":16,"storage_type":"NVMe SSD","storage_gb":512,"display":"14-inch Full HD IPS","gpu":"Intel Iris Xe","battery_health":"88% tested","operating_system":"Windows 11 Pro","warranty_months":3,"stock_quantity":1,"image_url":"https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=1200&q=85","status":"active"},
