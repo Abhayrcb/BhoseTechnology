@@ -9,6 +9,7 @@ import { Shell } from "./components/Shell";
 import { AdminPanel } from "./components/admin/AdminPanel";
 import Storefront, { ProductDetail } from "./pages/Storefront";
 import { Cart, Checkout } from "./pages/CartCheckout";
+import PromoVideos from "./pages/PromoVideos";
 import "@/App.css";
 import "./admin.css";
 
@@ -23,6 +24,7 @@ function App() {
   return <StoreProvider><BrowserRouter><SeoManager/><Routes>
     <Route path="/" element={<Storefront cartCount={cart.length}/>}/>
     <Route path="/product/:id" element={<ProductDetail addToCart={add} cartCount={cart.length}/>}/>
+    <Route path="/videos" element={<PromoVideos cartCount={cart.length}/>}/>
     <Route path="/cart" element={<Cart cart={cart} setCart={setCart}/>}/>
     <Route path="/checkout" element={<Checkout cart={cart} setCart={setCart}/>}/>
     <Route path="/admin" element={<Admin/>}/>
