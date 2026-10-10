@@ -1,0 +1,53 @@
+# Local test stack (no domain, no HTTPS):  docker compose -f docker-compose.local.yml up --build
+# Site: http://localhost:3000   Admin: /admin   API: http://localhost:8001/api/
+name: bhose-local
+
+services:
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_local:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  backend:
+    build:
+      context: ../backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: bhose_local
+      JWT_SECRET: local-secret-change-me
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin12345
+      CORS_ORIGINS: http://localhost:3000
+      PUBLIC_SITE_URL: ""
+      SEO_INDEXING_ENABLED: "false"
+      EMERGENT_EMAIL_KEY: not-configured
+      EMAIL_FROM_NAME: Bhose Technology
+    ports:
+      - "8001:8001"
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        # the browser calls the backend directly on this URL
+        REACT_APP_BACKEND_URL: http://localhost:8001
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      PORT: "3000"
+      REACT_APP_BACKEND_URL: http://backend:8001
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo_local:

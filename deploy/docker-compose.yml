@@ -1,0 +1,79 @@
+# Production stack: Caddy (HTTPS) -> frontend (Express+SEO) / backend (FastAPI) -> MongoDB
+name: bhose
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-bhose}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD in .env}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  backend:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URL: mongodb://${MONGO_USER:-bhose}:${MONGO_PASSWORD}@mongo:27017/?authSource=admin
+      DB_NAME: ${DB_NAME:-bhose_store}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      CORS_ORIGINS: https://${DOMAIN}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-}
+      SEO_INDEXING_ENABLED: ${SEO_INDEXING_ENABLED:-false}
+      EMERGENT_EMAIL_KEY: ${EMERGENT_EMAIL_KEY:-not-configured}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Bhose Technology}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
+    expose:
+      - "8001"
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        REACT_APP_BACKEND_URL: https://${DOMAIN:?set DOMAIN in .env}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      PORT: "3000"
+      # server-side SEO calls go straight to the backend over the internal network
+      REACT_APP_BACKEND_URL: http://backend:8001
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  mongo_data:
+  caddy_data:
+  caddy_config:

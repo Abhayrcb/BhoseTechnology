@@ -1,0 +1,27 @@
+# Automatic HTTPS (Let's Encrypt). DNS A record must point to this server first.
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	@static path /static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	handle /api/* {
+		reverse_proxy backend:8001
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
+
+# Optional: also redirect the bare domain. Add its DNS A record, then uncomment:
+# bhosetechnology.shop {
+# 	redir https://www.bhosetechnology.shop{uri} permanent
+# }
