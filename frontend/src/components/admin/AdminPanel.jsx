@@ -8,6 +8,7 @@ import { ProductAdmin } from "./ProductAdmin";
 import { OrderTable } from "./OrderTable";
 import { OrdersAdmin } from "./OrdersAdmin";
 import { SettingsAdmin } from "./SettingsAdmin";
+import { VideoAdmin } from "./VideoAdmin";
 
 export const AdminPanel = ({ tab, setTab, logout }) => {
   const [products, setProducts] = useState([]);
@@ -29,6 +30,7 @@ export const AdminPanel = ({ tab, setTab, logout }) => {
         {tab === "overview" && <><div className="stat-grid"><div><span>Units in stock</span><b data-testid="admin-stat-products">{products.filter(p => p.status === "active").reduce((sum, p) => sum + p.stock_quantity, 0)}</b></div><div><span>Orders placed</span><b data-testid="admin-stat-orders">{orders.length}</b></div><div><span>Order value</span><b data-testid="admin-stat-value">{money(orders.reduce((s, o) => s + o.total, 0))}</b></div></div><section className="admin-table-block"><h2>Latest orders</h2><OrderTable orders={orders.slice(0, 5)}/></section></>}
         {tab === "products" && <ProductAdmin products={products} setProducts={setProducts}/>}
         {tab === "orders" && <OrdersAdmin onOrdersChanged={refreshOrders}/>}
+        {tab === "videos" && <VideoAdmin/>}
         {tab === "settings" && <SettingsAdmin/>}
       </>}
     </section></div>;
