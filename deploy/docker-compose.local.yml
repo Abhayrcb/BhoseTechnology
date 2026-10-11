@@ -29,7 +29,7 @@ services:
       CORS_ORIGINS: http://localhost:3000
       PUBLIC_SITE_URL: ""
       SEO_INDEXING_ENABLED: "false"
-      EMERGENT_EMAIL_KEY: not-configured
+      EMERGENT_EMAIL_KEY:
       EMAIL_FROM_NAME: Bhose Technology
     ports:
       - "8001:8001"
